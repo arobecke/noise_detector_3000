@@ -112,13 +112,35 @@ void loop()
   if(loudestMicSampleSum < mic2SamplesSum) {
     loudestMicLed = led2;
     loudestMicSampleSum = mic2SamplesSum;
-  } else if (loudestMicSampleSum < mic3SamplesSum) {
+  }
+
+  if (loudestMicSampleSum < mic3SamplesSum) {
     loudestMicLed = led3;
     loudestMicSampleSum = mic3SamplesSum;
-  } else if (loudestMicSampleSum < mic4SamplesSum) {
+  }
+
+  if (loudestMicSampleSum < mic4SamplesSum) {
     loudestMicLed = led4;
     loudestMicSampleSum = mic4SamplesSum;
   }
+
+  Serial.println("mic1:");
+  Serial.println(mic1SamplesSum);
+
+  Serial.println("mic2:");
+  Serial.println(mic2SamplesSum);
+
+  Serial.println("mic3:");
+  Serial.println(mic3SamplesSum);
+
+  Serial.println("mic4:");
+  Serial.println(mic4SamplesSum);
+
+  Serial.println("loudestMicSampleSum:");
+  Serial.println(loudestMicSampleSum);
+
+  Serial.println("Loudest mic was:");
+  Serial.println(loudestMicLed - 6);
 
   digitalWrite(led1, LOW);
   digitalWrite(led2, LOW);
