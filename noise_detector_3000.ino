@@ -2,7 +2,7 @@
 #define LIN_OUT8 1 // use the linear byte output function
 
 
-const int detectionWindowSize = 5;
+const int detectionWindowSize = 10;
 #define AmpMax (1024 / 2)
 #define MicSamples (1024*2)
 #define VolumeGainFactorBits 0
@@ -32,8 +32,9 @@ void setup()
    pinMode(led4, OUTPUT);
 
    ADMUX |= 0x40; // Use Vcc for analog reference.
-     DIDR0 = 0x01; // turn off the digital input for adc0
-     analogReference(EXTERNAL); // 3.3V to AREF
+   DIDR0 = 0x01; // turn off the digital input for adc0
+   analogReference(EXTERNAL); // 3.3V to AREF
+
 
      // serial
      Serial.begin(9600);
@@ -159,6 +160,11 @@ void loop()
     mic4SamplesSum = mic4SamplesSum + mic4Samples[j];
   }
 
+  mic1SamplesSum /= detectionWindowSize;
+  mic2SamplesSum /= detectionWindowSize;
+  mic3SamplesSum /= detectionWindowSize;
+  mic4SamplesSum /= detectionWindowSize;
+
   // Calculate who was the loudest of all
   double loudestMicSampleSum = mic1SamplesSum;
   int loudestMicLed = led1;
@@ -206,6 +212,12 @@ void loop()
   }
 
 }
+
+
+
+
+
+
 
 
 
