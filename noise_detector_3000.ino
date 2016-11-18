@@ -1,7 +1,13 @@
-const int sampleWindowInMillis = 50; // Sample window width in mS (50 mS = 20Hz)
-const int detectionWindowSize = 100;
+#define LOG_OUT 1 // use the log output function
+#define LIN_OUT8 1 // use the linear byte output function
 
-const double loudThreshold = 2.5 / detectionWindowSize;
+
+const int detectionWindowSize = 5;
+#define AmpMax (1024 / 2)
+#define MicSamples (1024*2)
+#define VolumeGainFactorBits 0
+
+const double loudThreshold = 20 / detectionWindowSize;
 
 unsigned int sample;
 
@@ -19,11 +25,20 @@ const int detectionWindowSizeInMillis = 30 * 1000;
 
 void setup()
 {
-   Serial.begin(9600);
+
    pinMode(led1, OUTPUT);
    pinMode(led2, OUTPUT);
    pinMode(led3, OUTPUT);
    pinMode(led4, OUTPUT);
+
+   ADMUX |= 0x40; // Use Vcc for analog reference.
+     DIDR0 = 0x01; // turn off the digital input for adc0
+     analogReference(EXTERNAL); // 3.3V to AREF
+
+     // serial
+     Serial.begin(9600);
+     while (!Serial); // Wait untilSerial is ready - Leonardo
+     Serial.println("Starting mic demo");
 }
 
 
@@ -37,8 +52,6 @@ void loop()
   int i;
 
   for(i = 0; i < detectionWindowSize; i++) {
-    unsigned long sampleStart = millis();
-
      unsigned int signalMaxMic1 = 0;
      unsigned int signalMinMic1 = 1024;
 
@@ -51,44 +64,85 @@ void loop()
      unsigned int signalMaxMic4 = 0;
      unsigned int signalMinMic4 = 1024;
 
-     while (millis() - sampleStart < sampleWindowInMillis) {
 
-          double signalMic1 = analogRead(mic1);
-          double signalMic2 = analogRead(mic2);
-          double signalMic3 = analogRead(mic3);
-          double signalMic4 = analogRead(mic4);
 
-          if (signalMic1 < 1024) {
-             signalMaxMic1 = (signalMaxMic1 > signalMic1) ? signalMaxMic1 : signalMic1;
-             signalMinMic1 = (signalMinMic1 < signalMic1) ? signalMinMic1 : signalMic1;
-          }
+     long soundVolAvg1 = 0, soundVolMax1 = 0, soundVolRMS1 = 0;
+     long soundVolAvg2 = 0, soundVolMax2 = 0, soundVolRMS2 = 0;
+     long soundVolAvg3 = 0, soundVolMax3 = 0, soundVolRMS3 = 0;
+     long soundVolAvg4 = 0, soundVolMax4 = 0, soundVolRMS4 = 0;
 
-          if (signalMic2 < 1024) {
-            signalMaxMic2 = (signalMaxMic2 > signalMic2) ? signalMaxMic2 : signalMic2;
-            signalMinMic2 = (signalMinMic2 < signalMic2) ? signalMinMic2 : signalMic2;
-          }
+      for (int x = 0; x < MicSamples; x++) {
 
-          if (signalMic3 < 1024) {
-            signalMaxMic3 = (signalMaxMic3 > signalMic3) ? signalMaxMic3 : signalMic3;
-            signalMinMic3 = (signalMinMic3 < signalMic3) ? signalMinMic3 : signalMic3;
-          }
+        int signalMic1 = analogRead(mic1);
+        int signalMic2 = analogRead(mic2);
+        int signalMic3 = analogRead(mic3);
+        int signalMic4 = analogRead(mic4);
 
-          if (signalMic4 < 1024) {
-            signalMaxMic4 = (signalMaxMic4 > signalMic4) ? signalMaxMic4 : signalMic4;
-            signalMinMic4 = (signalMinMic4 < signalMic4) ? signalMinMic4 : signalMic4;
-          }
 
-     }
+        int signalMic1Amplitude = abs(signalMic1 - AmpMax);
+        int signalMic2Amplitude = abs(signalMic2 - AmpMax);
+        int signalMic3Amplitude = abs(signalMic3 - AmpMax);
+        int signalMic4Amplitude = abs(signalMic4 - AmpMax);
 
-       double peakToPeakMic1 = signalMaxMic1 - signalMinMic1;
-       double peakToPeakMic2 = signalMaxMic2 - signalMinMic2;
-       double peakToPeakMic3 = signalMaxMic3 - signalMinMic3;
-       double peakToPeakMic4 = signalMaxMic4 - signalMinMic4;
 
-       mic1Samples[i] = (peakToPeakMic1 + 5.0) / 1024;
-       mic2Samples[i] = (peakToPeakMic2 + 5.0) / 1024;
-       mic3Samples[i] = (peakToPeakMic3 + 5.0) / 1024;
-       mic4Samples[i] = (peakToPeakMic4 + 5.0) / 1024;
+         soundVolMax1 = max(soundVolMax1, signalMic1Amplitude);
+         soundVolMax2 = max(soundVolMax2, signalMic2Amplitude);
+         soundVolMax3 = max(soundVolMax3, signalMic3Amplitude);
+         soundVolMax4 = max(soundVolMax4, signalMic4Amplitude);
+
+         soundVolAvg1 += signalMic1Amplitude;
+         soundVolAvg2 += signalMic2Amplitude;
+         soundVolAvg3 += signalMic3Amplitude;
+         soundVolAvg4 += signalMic4Amplitude;
+
+         soundVolRMS1 += ((long)signalMic1Amplitude*signalMic1Amplitude);
+         soundVolRMS2 += ((long)signalMic2Amplitude*signalMic2Amplitude);
+         soundVolRMS3 += ((long)signalMic3Amplitude*signalMic3Amplitude);
+         soundVolRMS4 += ((long)signalMic4Amplitude*signalMic4Amplitude);
+
+      }
+
+      soundVolAvg1 /= MicSamples;
+      soundVolAvg2 /= MicSamples;
+      soundVolAvg3 /= MicSamples;
+      soundVolAvg4 /= MicSamples;
+
+      soundVolRMS1 /= MicSamples;
+      soundVolRMS2 /= MicSamples;
+      soundVolRMS3 /= MicSamples;
+      soundVolRMS4 /= MicSamples;
+
+      float soundVolRMS1flt = sqrt(soundVolRMS1);
+      float soundVolRMS2flt = sqrt(soundVolRMS2);
+      float soundVolRMS3flt = sqrt(soundVolRMS3);
+      float soundVolRMS4flt = sqrt(soundVolRMS4);
+
+      soundVolAvg1 = 100 * soundVolAvg1 / AmpMax;
+      soundVolAvg2 = 100 * soundVolAvg2 / AmpMax;
+      soundVolAvg3 = 100 * soundVolAvg3 / AmpMax;
+      soundVolAvg4 = 100 * soundVolAvg4 / AmpMax;
+
+      soundVolMax1 = 100 * soundVolMax1 / AmpMax;
+      soundVolMax2 = 100 * soundVolMax2 / AmpMax;
+      soundVolMax3 = 100 * soundVolMax3 / AmpMax;
+      soundVolMax4 = 100 * soundVolMax4 / AmpMax;
+
+      soundVolRMS1flt = 100 * soundVolRMS1flt / AmpMax;
+      soundVolRMS2flt = 100 * soundVolRMS2flt / AmpMax;
+      soundVolRMS3flt = 100 * soundVolRMS3flt / AmpMax;
+      soundVolRMS4flt = 100 * soundVolRMS4flt / AmpMax;
+
+      soundVolRMS1 = 10 * soundVolRMS1flt / 7; // RMS to estimate peak (RMS is 0.7 of the peak in sin)
+      soundVolRMS2 = 10 * soundVolRMS2flt / 7; // RMS to estimate peak (RMS is 0.7 of the peak in sin)
+      soundVolRMS3 = 10 * soundVolRMS3flt / 7; // RMS to estimate peak (RMS is 0.7 of the peak in sin)
+      soundVolRMS4 = 10 * soundVolRMS4flt / 7; // RMS to estimate peak (RMS is 0.7 of the peak in sin)
+
+
+
+       mic1Samples[i] = soundVolMax1;
+       mic2Samples[i] = soundVolMax2;
+       mic3Samples[i] = soundVolMax3;
+       mic4Samples[i] = soundVolMax4;
   }
 
   int j;
@@ -152,3 +206,19 @@ void loop()
   }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

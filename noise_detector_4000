@@ -1,0 +1,81 @@
+#define LOG_OUT 1 // use the log output function
+#define LIN_OUT8 1 // use the linear byte output function
+
+#define MicPin1 A0 // used with analogRead mode only
+#define MicPin2 A1 // used with analogRead mode only
+#define MicPin3 A2 // used with analogRead mode only
+#define MicPin4 A3 // used with analogRead mode only
+
+// consts
+#define AmpMax (1024 / 2)
+#define MicSamples (1024*2) // Three of these time-weightings have been internationally standardised, 'S' (1 s) originally called Slow, 'F' (125 ms) originally called Fast and 'I' (35 ms) originally called Impulse.
+#define VolumeGainFactorBits 0
+
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+
+
+
+void setup()
+{
+
+  ADMUX |= 0x40; // Use Vcc for analog reference.
+  DIDR0 = 0x01; // turn off the digital input for adc0
+  analogReference(EXTERNAL); // 3.3V to AREF
+
+  // serial
+  Serial.begin(9600);
+  while (!Serial); // Wait untilSerial is ready - Leonardo
+  Serial.println("Starting mic demo");
+}
+
+void loop()
+{
+  MeasureVolume();
+}
+
+
+
+
+
+
+void MeasureVolume()
+{
+  long soundVolAvg = 0, soundVolMax = 0, soundVolRMS = 0, t0 = millis();
+
+  for (int i = 0; i < MicSamples; i++)
+  {
+    int k = analogRead(MicPin);
+    int amp = abs(k - AmpMax);
+    // maybe we do not need this since it is noop
+    amp <<= VolumeGainFactorBits;
+    soundVolMax = max(soundVolMax, amp);
+    soundVolAvg += amp;
+    soundVolRMS += ((long)amp*amp);
+  }
+
+  soundVolAvg /= MicSamples;
+  soundVolRMS /= MicSamples;
+  float soundVolRMSflt = sqrt(soundVolRMS);
+  //sei();
+
+  float dB = 20.0*log10(soundVolRMSflt/AmpMax);
+
+  // convert from 0 to 100
+  soundVolAvg = 100 * soundVolAvg / AmpMax;
+  soundVolMax = 100 * soundVolMax / AmpMax;
+
+  soundVolRMSflt = 100 * soundVolRMSflt / AmpMax;
+  soundVolRMS = 10 * soundVolRMSflt / 7; // RMS to estimate peak (RMS is 0.7 of the peak in sin)
+
+  // print
+  Serial.print("Time: " + String(millis() - t0));
+  Serial.print(" Amp: Max: " + String(soundVolMax));
+  Serial.print("% Avg: " + String(soundVolAvg));
+  Serial.print("% RMS: " + String(soundVolRMS));
+  Serial.println("% dB: " + String(dB,3));
+
+
+}
+
+
