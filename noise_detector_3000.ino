@@ -2,12 +2,12 @@
 #define LIN_OUT8 1 // use the linear byte output function
 
 
-const int detectionWindowSize = 2;
+const int detectionWindowSize = 4;
 #define AmpMax (1024 / 2)
 #define MicSamples (1024*2)
 #define VolumeGainFactorBits 0
 
-const double loudThreshold = 5 / detectionWindowSize;
+const double loudThreshold = 6 / detectionWindowSize;
 
 unsigned int sample;
 
@@ -53,7 +53,7 @@ void setup()
      // serial
      Serial.begin(9600);
      while (!Serial); // Wait untilSerial is ready - Leonardo
-     Serial.println("Starting mic demo");
+     Serial.println("Starting noise detector 3000...");
 }
 
 
@@ -67,32 +67,9 @@ void loop()
   int i;
 
   boolean Mic1SwitchedOn = (digitalRead(mic1Switch) == HIGH) ? true : false;
-
-  Serial.println("digitalRead(mic1Switch)");
-  Serial.println(digitalRead(mic1Switch));
-
-  if (Mic1SwitchedOn) {
-    Serial.println("Mic 1 switched on!");
-  }
-
   boolean Mic2SwitchedOn = (digitalRead(mic2Switch) == HIGH) ? true : false;
-
-  if (Mic2SwitchedOn) {
-    Serial.println("Mic 2 switched on!");
-  }
-
   boolean Mic3SwitchedOn = (digitalRead(mic3Switch) == HIGH) ? true : false;
-
-  if (Mic3SwitchedOn) {
-    Serial.println("Mic 3 switched on!");
-  }
-
   boolean Mic4SwitchedOn = (digitalRead(mic4Switch) == HIGH) ? true : false;
-
-  if (Mic4SwitchedOn) {
-    Serial.println("Mic 4 switched on!");
-  }
-
 
   for(i = 0; i < detectionWindowSize; i++) {
      unsigned int signalMaxMic1 = 0;
@@ -185,7 +162,7 @@ void loop()
        mic1Samples[i] = Mic1SwitchedOn ? soundVolMax1 : 0;
        mic2Samples[i] = Mic2SwitchedOn ? soundVolMax2 : 0;
        mic3Samples[i] = Mic3SwitchedOn ? soundVolMax3 : 0;
-       mic4Samples[i] = Mic3SwitchedOn ? soundVolMax4 : 0;
+       mic4Samples[i] = Mic4SwitchedOn ? soundVolMax4 : 0;
   }
 
   int j;
@@ -226,23 +203,32 @@ void loop()
     loudestMicSampleSum = mic4SamplesSum;
   }
 
-  Serial.println("mic1:");
+  Serial.println("Emanuel:");
   Serial.println(mic1SamplesSum);
 
-  Serial.println("mic2:");
+  Serial.println("Martin:");
   Serial.println(mic2SamplesSum);
 
-  Serial.println("mic3:");
+  Serial.println("Andreas:");
   Serial.println(mic3SamplesSum);
 
-  Serial.println("mic4:");
+  Serial.println("Dominik:");
   Serial.println(mic4SamplesSum);
 
   Serial.println("loudestMicSampleSum:");
   Serial.println(loudestMicSampleSum);
 
-  Serial.println("Loudest mic was:");
-  Serial.println(loudestMicLed - 6);
+  int loudest = loudestMicLed - 6;
+
+  if(loudest == 1) {
+    Serial.println("Emanuel is the loudest!");
+  } else if (loudest == 2) {
+    Serial.println("Martin is the loudest!");
+  } else if (loudest == 3) {
+    Serial.println("Andy is the loudest");
+  } else if (loudest == 4) {
+    Serial.println("Domi is the loudest, again!");
+  }
 
   digitalWrite(led1, LOW);
   digitalWrite(led2, LOW);
@@ -251,9 +237,25 @@ void loop()
 
   if(loudestMicSampleSum > (loudThreshold * detectionWindowSize)) {
     digitalWrite(loudestMicLed, HIGH);
+
+    if(loudest == 1) {
+        Serial.println("Emanuel was too loud!");
+      } else if (loudest == 2) {
+        Serial.println("Martin was too loud!");
+      } else if (loudest == 3) {
+        Serial.println("Andy was too loud!");
+      } else if (loudest == 4) {
+        Serial.println("Domi was too loud, again!");
+      }
   }
 
 }
+
+
+
+
+
+
 
 
 
