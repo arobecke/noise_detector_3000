@@ -2,12 +2,12 @@
 #define LIN_OUT8 1 // use the linear byte output function
 
 
-const int detectionWindowSize = 5;
+const int detectionWindowSize = 2;
 #define AmpMax (1024 / 2)
 #define MicSamples (1024*2)
 #define VolumeGainFactorBits 0
 
-const double loudThreshold = 20 / detectionWindowSize;
+const double loudThreshold = 5 / detectionWindowSize;
 
 unsigned int sample;
 
@@ -254,6 +254,7 @@ void loop()
   }
 
 }
+
 
 
 
