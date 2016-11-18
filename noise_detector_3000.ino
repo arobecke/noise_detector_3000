@@ -2,7 +2,7 @@
 #define LIN_OUT8 1 // use the linear byte output function
 
 
-const int detectionWindowSize = 10;
+const int detectionWindowSize = 5;
 #define AmpMax (1024 / 2)
 #define MicSamples (1024*2)
 #define VolumeGainFactorBits 0
@@ -16,10 +16,18 @@ const int mic2 = 1;
 const int mic3 = 2;
 const int mic4 = 3;
 
+
+const int mic1Switch = 2;
+const int mic2Switch = 3;
+const int mic3Switch = 4;
+const int mic4Switch = 5;
+
 const int led1 = 7;
 const int led2 = 8;
 const int led3 = 9;
 const int led4 = 10;
+
+
 
 const int detectionWindowSizeInMillis = 30 * 1000;
 
@@ -30,6 +38,12 @@ void setup()
    pinMode(led2, OUTPUT);
    pinMode(led3, OUTPUT);
    pinMode(led4, OUTPUT);
+
+   pinMode(mic1Switch, INPUT);
+   pinMode(mic2Switch, INPUT);
+   pinMode(mic3Switch, INPUT);
+   pinMode(mic4Switch, INPUT);
+
 
    ADMUX |= 0x40; // Use Vcc for analog reference.
    DIDR0 = 0x01; // turn off the digital input for adc0
@@ -51,6 +65,34 @@ void loop()
   double mic4Samples [detectionWindowSize];
 
   int i;
+
+  boolean Mic1SwitchedOn = (digitalRead(mic1Switch) == HIGH) ? true : false;
+
+  Serial.println("digitalRead(mic1Switch)");
+  Serial.println(digitalRead(mic1Switch));
+
+  if (Mic1SwitchedOn) {
+    Serial.println("Mic 1 switched on!");
+  }
+
+  boolean Mic2SwitchedOn = (digitalRead(mic2Switch) == HIGH) ? true : false;
+
+  if (Mic2SwitchedOn) {
+    Serial.println("Mic 2 switched on!");
+  }
+
+  boolean Mic3SwitchedOn = (digitalRead(mic3Switch) == HIGH) ? true : false;
+
+  if (Mic3SwitchedOn) {
+    Serial.println("Mic 3 switched on!");
+  }
+
+  boolean Mic4SwitchedOn = (digitalRead(mic4Switch) == HIGH) ? true : false;
+
+  if (Mic4SwitchedOn) {
+    Serial.println("Mic 4 switched on!");
+  }
+
 
   for(i = 0; i < detectionWindowSize; i++) {
      unsigned int signalMaxMic1 = 0;
@@ -140,10 +182,10 @@ void loop()
 
 
 
-       mic1Samples[i] = soundVolMax1;
-       mic2Samples[i] = soundVolMax2;
-       mic3Samples[i] = soundVolMax3;
-       mic4Samples[i] = soundVolMax4;
+       mic1Samples[i] = Mic1SwitchedOn ? soundVolMax1 : 0;
+       mic2Samples[i] = Mic2SwitchedOn ? soundVolMax2 : 0;
+       mic3Samples[i] = Mic3SwitchedOn ? soundVolMax3 : 0;
+       mic4Samples[i] = Mic3SwitchedOn ? soundVolMax4 : 0;
   }
 
   int j;
@@ -212,6 +254,12 @@ void loop()
   }
 
 }
+
+
+
+
+
+
 
 
 
