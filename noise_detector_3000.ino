@@ -7,7 +7,7 @@ const int detectionWindowSize = 4;
 #define MicSamples (1024*2)
 #define VolumeGainFactorBits 0
 
-const double loudThreshold = 6 / detectionWindowSize;
+const double loudThreshold = 1 / detectionWindowSize;
 
 unsigned int sample;
 
@@ -159,10 +159,15 @@ void loop()
 
 
 
-       mic1Samples[i] = Mic1SwitchedOn ? soundVolMax1 : 0;
-       mic2Samples[i] = Mic2SwitchedOn ? soundVolMax2 : 0;
-       mic3Samples[i] = Mic3SwitchedOn ? soundVolMax3 : 0;
-       mic4Samples[i] = Mic4SwitchedOn ? soundVolMax4 : 0;
+//       mic1Samples[i] = Mic1SwitchedOn ? soundVolMax1 : 0;
+//       mic2Samples[i] = Mic2SwitchedOn ? soundVolMax2 : 0;
+//       mic3Samples[i] = Mic3SwitchedOn ? soundVolMax3 : 0;
+//       mic4Samples[i] = Mic4SwitchedOn ? soundVolMax4 : 0;
+
+       mic1Samples[i] = Mic1SwitchedOn ? soundVolRMS1 : 0;
+       mic2Samples[i] = Mic2SwitchedOn ? soundVolRMS2 : 0;
+       mic3Samples[i] = Mic3SwitchedOn ? soundVolRMS3 : 0;
+       mic4Samples[i] = Mic4SwitchedOn ? soundVolRMS4 : 0;
   }
 
   int j;
@@ -235,7 +240,7 @@ void loop()
   digitalWrite(led3, LOW);
   digitalWrite(led4, LOW);
 
-  if(loudestMicSampleSum > (loudThreshold * detectionWindowSize)) {
+  if(loudestMicSampleSum > 1) {
     digitalWrite(loudestMicLed, HIGH);
 
     if(loudest == 1) {
@@ -250,6 +255,9 @@ void loop()
   }
 
 }
+
+
+
 
 
 
